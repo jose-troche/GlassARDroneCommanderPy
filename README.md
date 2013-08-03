@@ -7,4 +7,4 @@ Google Glass application to fly an AR.Drone quadcopter.
 * Install Android Studio or the Android Developer Tools (ADT) bundle in your computer
 * Install (deploy) launchy in Google Glass
 
-If you need more specific details read [prerequisites](prerequistes.md).
+If you need more specific details read [prerequisites](prerequisites.md).
