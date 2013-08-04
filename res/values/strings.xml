@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Quadcopter Commander</string>
+    <!--Temp-->
+    <string name="btn_ON">LED ON</string>
+    <string name="btn_OFF">LED OFF</string>
+</resources>
