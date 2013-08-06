@@ -1,300 +1,359 @@
+/*
+ * Copyright (C) 2009 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package com.troche.glass.quadcopter;
 
-///*
-//import android.app.Activity;
-//import android.bluetooth.BluetoothAdapter;
-//import android.bluetooth.BluetoothDevice;
-//import android.bluetooth.BluetoothSocket;
-//import android.content.Intent;
-//import android.os.Build;
-//import android.os.Bundle;
-//import android.os.SystemClock;
-//import android.util.Log;
-//import android.view.KeyEvent;
-//import android.view.View;
-//import android.widget.Button;
-//import android.widget.Chronometer;
-//import android.widget.TextView;
-//import android.widget.Toast;
-//
-//import java.io.IOException;
-//import java.io.OutputStream;
-//import java.lang.reflect.Method;
-//import java.util.UUID;
-//
-///**
-// * Main activity.
-// */
-//public class MainActivity extends Activity {
-//
-//  private Chronometer mChronometer;
-//  private TextView mHint;
-//
-//  private long mBase = 0;
-//  private boolean mStarted = false;
-//
-//  @Override
-//  protected void onCreate(Bundle savedInstanceState) {
-//    super.onCreate(savedInstanceState);
-//    setContentView(R.layout.layout_stopwatch);
-//
-//    mChronometer = (Chronometer) findViewById(R.id.stopwatch);
-//    mHint = (TextView) findViewById(R.id.phrase_hint);
-//  }
-//
-//  /**
-//   * Handle the tap event from the touchpad.
-//   */
-//  @Override
-//  public boolean onKeyDown(int keyCode, KeyEvent event) {
-//    switch (keyCode) {
-//    // Handle tap events.
-//    case KeyEvent.KEYCODE_DPAD_CENTER:
-//    case KeyEvent.KEYCODE_ENTER:
-//      toggleStopWatch();
-//      return true;
-//    default:
-//      return super.onKeyDown(keyCode, event);
-//    }
-//  }
-//
-//  @Override
-//  public void onResume() {
-//    super.onResume();
-//    if (!mStarted) {
-//      mBase = mChronometer.getBase();
-//      toggleStopWatch();
-//    }
-//  }
-//
-//  @Override
-//  public void onPause() {
-//    super.onPause();
-//    if (mStarted) {
-//      mChronometer.stop();
-//      mStarted = false;
-//    }
-//  }
-//
-//  @Override
-//  public void onDestroy() {
-//    if (mStarted) {
-//      mChronometer.stop();
-//      mStarted = false;
-//    }
-//    super.onDestroy();
-//  }
-//
-//  /**
-//   * Toggle the StopWatch states.
-//   */
-//  private void toggleStopWatch() {
-//    if (mStarted) {
-//      mBase = SystemClock.elapsedRealtime();
-//      mChronometer.stop();
-//      mHint.setText(R.string.stopwatch_resume);
-//    } else {
-//      mChronometer.setBase(mChronometer.getBase() + SystemClock.elapsedRealtime() - mBase);
-//      mChronometer.start();
-//      mHint.setText(R.string.stopwatch_pause);
-//    }
-//    mStarted = !mStarted;
-//  }
-//}
-
-/**
- *  @version 1.1 (28.01.2013)
- *  http://english.cxem.net/arduino/arduino5.php
- *  @author Koltykov A.V. (�������� �.�.)
- *
- */
-
-
-import java.io.IOException;
-import java.io.OutputStream;
-import java.lang.reflect.Method;
-import java.util.UUID;
-
+import android.app.ActionBar;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothSocket;
 import android.content.Intent;
-import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
+import android.view.KeyEvent;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
+import android.view.View.OnClickListener;
+import android.view.inputmethod.EditorInfo;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
+import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
+/**
+ * This is the main Activity that displays the current chat session.
+ */
 public class MainActivity extends Activity {
-    private static final String TAG = "quadcopter-commander";
+    // Debugging
+    private static final String TAG = "QuadcopterCommander";
+    private static final boolean D = true;
 
-    Button btnOn, btnOff;
+    // Message types sent from the BluetoothConnectionService Handler
+    public static final int MESSAGE_STATE_CHANGE = 1;
+    public static final int MESSAGE_READ = 2;
+    public static final int MESSAGE_WRITE = 3;
+    public static final int MESSAGE_DEVICE_NAME = 4;
+    public static final int MESSAGE_TOAST = 5;
 
-    private BluetoothAdapter btAdapter = null;
-    private BluetoothSocket btSocket = null;
-    private OutputStream outStream = null;
+    // Key names received from the BluetoothConnectionService Handler
+    public static final String DEVICE_NAME = "device_name";
+    public static final String TOAST = "toast";
 
-    // SPP UUID service
-    private static final UUID MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
+    // Intent request codes
+    private static final int REQUEST_CONNECT_DEVICE_SECURE = 1;
+    private static final int REQUEST_CONNECT_DEVICE_INSECURE = 2;
+    private static final int REQUEST_ENABLE_BT = 3;
 
-    // MAC-address of Bluetooth module (you must edit this line)
-    private static String address = "00:88:65:3E:4C:B3";
+    // Layout Views
+    private ListView mConversationView;
+    private EditText mOutEditText;
+    private Button mSendButton;
 
-    /** Called when the activity is first created. */
+    // Name of the connected device
+    private String mConnectedDeviceName = null;
+    // Array adapter for the conversation thread
+    private ArrayAdapter<String> mConversationArrayAdapter;
+    // String buffer for outgoing messages
+    private StringBuffer mOutStringBuffer;
+    // Local Bluetooth adapter
+    private BluetoothAdapter mBluetoothAdapter = null;
+    // Member object for the chat services
+    private BluetoothConnectionService mChatService = null;
+
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if(D) Log.e(TAG, "+++ ON CREATE +++");
 
-        setContentView(R.layout.activity_main);
+        // Set up the window layout
+        setContentView(R.layout.main);
 
-        btnOn = (Button) findViewById(R.id.btnOn);
-        btnOff = (Button) findViewById(R.id.btnOff);
+        // Get local Bluetooth adapter
+        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
-        btAdapter = BluetoothAdapter.getDefaultAdapter();
-        checkBTState();
-
-        btnOn.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                sendData("1");
-                Toast.makeText(getBaseContext(), "Turn on LED", Toast.LENGTH_SHORT).show();
-            }
-        });
-
-        btnOff.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                sendData("0");
-                Toast.makeText(getBaseContext(), "Turn off LED", Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-
-    private BluetoothSocket createBluetoothSocket(BluetoothDevice device) throws IOException {
-        if(Build.VERSION.SDK_INT >= 10){
-            try {
-                final Method m = device.getClass().getMethod("createInsecureRfcommSocketToServiceRecord", new Class[] { UUID.class });
-                return (BluetoothSocket) m.invoke(device, MY_UUID);
-            } catch (Exception e) {
-                Log.e(TAG, "Could not create Insecure RFComm Connection", e);
-            }
-        }
-        return  device.createRfcommSocketToServiceRecord(MY_UUID);
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-
-        Log.d(TAG, "...onResume - try connect...");
-
-        // Set up a pointer to the remote node using it's address.
-        BluetoothDevice device = btAdapter.getRemoteDevice(address);
-
-        // Two things are needed to make a connection:
-        //   A MAC address, which we got above.
-        //   A Service ID or UUID.  In this case we are using the
-        //     UUID for SPP.
-
-        try {
-            btSocket = createBluetoothSocket(device);
-        } catch (IOException e1) {
-            errorExit("Fatal Error", "In onResume() and socket create failed: " + e1.getMessage() + ".");
-        }
-
-    /*try {
-      btSocket = device.createRfcommSocketToServiceRecord(MY_UUID);
-    } catch (IOException e) {
-      errorExit("Fatal Error", "In onResume() and socket create failed: " + e.getMessage() + ".");
-    }*/
-
-        // Discovery is resource intensive.  Make sure it isn't going on
-        // when you attempt to connect and pass your message.
-        btAdapter.cancelDiscovery();
-
-        // Establish the connection.  This will block until it connects.
-        Log.d(TAG, "...Connecting...");
-        try {
-            btSocket.connect();
-            Log.d(TAG, "...Connection ok...");
-        } catch (IOException e) {
-            try {
-                btSocket.close();
-            } catch (IOException e2) {
-                errorExit("Fatal Error", "In onResume() and unable to close socket during connection failure" + e2.getMessage() + ".");
-            }
-        }
-
-        // Create a data stream so we can talk to server.
-        Log.d(TAG, "...Create Socket...");
-
-        try {
-            outStream = btSocket.getOutputStream();
-        } catch (IOException e) {
-            errorExit("Fatal Error", "In onResume() and output stream creation failed:" + e.getMessage() + ".");
+        // If the adapter is null, then Bluetooth is not supported
+        if (mBluetoothAdapter == null) {
+            Toast.makeText(this, "Bluetooth is not available", Toast.LENGTH_LONG).show();
+            finish();
+            return;
         }
     }
 
     @Override
-    public void onPause() {
-        super.onPause();
+    public void onStart() {
+        super.onStart();
+        if(D) Log.e(TAG, "++ ON START ++");
 
-        Log.d(TAG, "...In onPause()...");
-
-        if (outStream != null) {
-            try {
-                outStream.flush();
-            } catch (IOException e) {
-                errorExit("Fatal Error", "In onPause() and failed to flush output stream: " + e.getMessage() + ".");
-            }
-        }
-
-        try     {
-            btSocket.close();
-        } catch (IOException e2) {
-            errorExit("Fatal Error", "In onPause() and failed to close socket." + e2.getMessage() + ".");
-        }
-    }
-
-    private void checkBTState() {
-        // Check for Bluetooth support and then check to make sure it is turned on
-        // Emulator doesn't support Bluetooth and will return null
-        if(btAdapter==null) {
-            errorExit("Fatal Error", "Bluetooth not support");
+        // If BT is not on, request that it be enabled.
+        // setupChat() will then be called during onActivityResult
+        if (!mBluetoothAdapter.isEnabled()) {
+            Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
+        // Otherwise, setup the chat session
         } else {
-            if (btAdapter.isEnabled()) {
-                Log.d(TAG, "...Bluetooth ON...");
-            } else {
-                //Prompt user to turn on Bluetooth
-                Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-                startActivityForResult(enableBtIntent, 1);
+            if (mChatService == null) setupChat();
+        }
+    }
+
+    @Override
+    public synchronized void onResume() {
+        super.onResume();
+        if(D) Log.e(TAG, "+ ON RESUME +");
+
+        // Performing this check in onResume() covers the case in which BT was
+        // not enabled during onStart(), so we were paused to enable it...
+        // onResume() will be called when ACTION_REQUEST_ENABLE activity returns.
+        if (mChatService != null) {
+            // Only if the state is STATE_NONE, do we know that we haven't started already
+            if (mChatService.getState() == BluetoothConnectionService.STATE_NONE) {
+              // Start the Bluetooth chat services
+              mChatService.start();
             }
         }
     }
 
-    private void errorExit(String title, String message){
-        Toast.makeText(getBaseContext(), title + " - " + message, Toast.LENGTH_LONG).show();
-        finish();
+    private void setupChat() {
+        Log.d(TAG, "setupChat()");
+
+        // Initialize the array adapter for the conversation thread
+        mConversationArrayAdapter = new ArrayAdapter<String>(this, R.layout.message);
+        mConversationView = (ListView) findViewById(R.id.in);
+        mConversationView.setAdapter(mConversationArrayAdapter);
+
+        // Initialize the compose field with a listener for the return key
+        mOutEditText = (EditText) findViewById(R.id.edit_text_out);
+        mOutEditText.setOnEditorActionListener(mWriteListener);
+
+        // Initialize the send button with a listener that for click events
+        mSendButton = (Button) findViewById(R.id.button_send);
+        mSendButton.setOnClickListener(new OnClickListener() {
+            public void onClick(View v) {
+                // Send a message using content of the edit text widget
+                TextView view = (TextView) findViewById(R.id.edit_text_out);
+                String message = view.getText().toString();
+                sendMessage(message);
+            }
+        });
+
+        // Initialize the BluetoothConnectionService to perform bluetooth connections
+        mChatService = new BluetoothConnectionService(this, mHandler);
+
+        // Initialize the buffer for outgoing messages
+        mOutStringBuffer = new StringBuffer("");
     }
 
-    private void sendData(String message) {
-        byte[] msgBuffer = message.getBytes();
+    @Override
+    public synchronized void onPause() {
+        super.onPause();
+        if(D) Log.e(TAG, "- ON PAUSE -");
+    }
 
-        Log.d(TAG, "...Send data: " + message + "...");
+    @Override
+    public void onStop() {
+        super.onStop();
+        if(D) Log.e(TAG, "-- ON STOP --");
+    }
 
-        try {
-            outStream.write(msgBuffer);
-        } catch (IOException e) {
-            String msg = "In onResume() and an exception occurred during write: " + e.getMessage();
-            if (address.equals("00:00:00:00:00:00"))
-                msg = msg + ".\n\nUpdate your server address from 00:00:00:00:00:00 to the correct address on line 35 in the java code";
-            msg = msg +  ".\n\nCheck that the SPP UUID: " + MY_UUID.toString() + " exists on server.\n\n";
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        // Stop the Bluetooth chat services
+        if (mChatService != null) mChatService.stop();
+        if(D) Log.e(TAG, "--- ON DESTROY ---");
+    }
 
-            errorExit("Fatal Error", msg);
+    private void ensureDiscoverable() {
+        if(D) Log.d(TAG, "ensure discoverable");
+        if (mBluetoothAdapter.getScanMode() !=
+            BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE) {
+            Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+            discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
+            startActivity(discoverableIntent);
         }
     }
+
+    /**
+     * Sends a message.
+     * @param message  A string of text to send.
+     */
+    private void sendMessage(String message) {
+        // Check that we're actually connected before trying anything
+        if (mChatService.getState() != BluetoothConnectionService.STATE_CONNECTED) {
+            Toast.makeText(this, R.string.not_connected, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (message.length() <= 0) message = "No Message";
+
+        // Check that there's actually something to send
+        if (message.length() > 0) {
+            // Get the message bytes and tell the BluetoothConnectionService to write
+            byte[] send = message.getBytes();
+            mChatService.write(send);
+
+            // Reset out string buffer to zero and clear the edit text field
+            mOutStringBuffer.setLength(0);
+            mOutEditText.setText(mOutStringBuffer);
+        }
+    }
+
+    // The action listener for the EditText widget, to listen for the return key
+    private TextView.OnEditorActionListener mWriteListener =
+        new TextView.OnEditorActionListener() {
+        public boolean onEditorAction(TextView view, int actionId, KeyEvent event) {
+            // If the action is a key-up event on the return key, send the message
+            if (actionId == EditorInfo.IME_NULL && event.getAction() == KeyEvent.ACTION_UP) {
+                String message = view.getText().toString();
+                sendMessage(message);
+            }
+            if(D) Log.i(TAG, "END onEditorAction");
+            return true;
+        }
+    };
+
+    private final void setStatus(int resId) {
+        final ActionBar actionBar = getActionBar();
+        actionBar.setSubtitle(resId);
+    }
+
+    private final void setStatus(CharSequence subTitle) {
+        final ActionBar actionBar = getActionBar();
+        actionBar.setSubtitle(subTitle);
+    }
+
+    // The Handler that gets information back from the BluetoothConnectionService
+    private final Handler mHandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+            case MESSAGE_STATE_CHANGE:
+                if(D) Log.i(TAG, "MESSAGE_STATE_CHANGE: " + msg.arg1);
+                switch (msg.arg1) {
+                case BluetoothConnectionService.STATE_CONNECTED:
+                    setStatus(getString(R.string.title_connected_to, mConnectedDeviceName));
+                    mConversationArrayAdapter.clear();
+                    break;
+                case BluetoothConnectionService.STATE_CONNECTING:
+                    setStatus(R.string.title_connecting);
+                    break;
+                case BluetoothConnectionService.STATE_LISTEN:
+                case BluetoothConnectionService.STATE_NONE:
+                    setStatus(R.string.title_not_connected);
+                    break;
+                }
+                break;
+            case MESSAGE_WRITE:
+                byte[] writeBuf = (byte[]) msg.obj;
+                // construct a string from the buffer
+                String writeMessage = new String(writeBuf);
+                mConversationArrayAdapter.add("Me:  " + writeMessage);
+                break;
+            case MESSAGE_READ:
+                byte[] readBuf = (byte[]) msg.obj;
+                // construct a string from the valid bytes in the buffer
+                String readMessage = new String(readBuf, 0, msg.arg1);
+                mConversationArrayAdapter.add(mConnectedDeviceName+":  " + readMessage);
+                break;
+            case MESSAGE_DEVICE_NAME:
+                // save the connected device's name
+                mConnectedDeviceName = msg.getData().getString(DEVICE_NAME);
+                Toast.makeText(getApplicationContext(), "Connected to "
+                        + mConnectedDeviceName, Toast.LENGTH_SHORT).show();
+                break;
+            case MESSAGE_TOAST:
+                Toast.makeText(getApplicationContext(), msg.getData().getString(TOAST),
+                        Toast.LENGTH_SHORT).show();
+                break;
+            }
+        }
+    };
+
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if(D) Log.d(TAG, "onActivityResult " + resultCode);
+        switch (requestCode) {
+        case REQUEST_CONNECT_DEVICE_SECURE:
+            // When DeviceListActivity returns with a device to connect
+            if (resultCode == Activity.RESULT_OK) {
+                connectDevice(data, true);
+            }
+            break;
+        case REQUEST_CONNECT_DEVICE_INSECURE:
+            // When DeviceListActivity returns with a device to connect
+            if (resultCode == Activity.RESULT_OK) {
+                connectDevice(data, false);
+            }
+            break;
+        case REQUEST_ENABLE_BT:
+            // When the request to enable Bluetooth returns
+            if (resultCode == Activity.RESULT_OK) {
+                // Bluetooth is now enabled, so set up a chat session
+                setupChat();
+            } else {
+                // User did not enable Bluetooth or an error occurred
+                Log.d(TAG, "BT not enabled");
+                Toast.makeText(this, R.string.bt_not_enabled_leaving, Toast.LENGTH_SHORT).show();
+                finish();
+            }
+        }
+    }
+
+    private void connectDevice(Intent data, boolean secure) {
+        // Get the device MAC address
+        String address = data.getExtras()
+            .getString(DeviceListActivity.EXTRA_DEVICE_ADDRESS);
+        // Get the BluetoothDevice object
+        BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
+        // Attempt to connect to the device
+        mChatService.connect(device, secure);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.option_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        Intent serverIntent = null;
+        switch (item.getItemId()) {
+        case R.id.secure_connect_scan:
+            // Launch the DeviceListActivity to see devices and do scan
+            serverIntent = new Intent(this, DeviceListActivity.class);
+            startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE_SECURE);
+            return true;
+        case R.id.insecure_connect_scan:
+            // Launch the DeviceListActivity to see devices and do scan
+            serverIntent = new Intent(this, DeviceListActivity.class);
+            startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE_INSECURE);
+            return true;
+        case R.id.discoverable:
+            // Ensure this device is discoverable by others
+            ensureDiscoverable();
+            return true;
+        }
+        return false;
+    }
+
 }
-
-
-
