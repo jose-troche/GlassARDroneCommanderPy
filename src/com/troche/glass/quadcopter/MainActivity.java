@@ -21,6 +21,10 @@ import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -42,10 +46,14 @@ import android.widget.Toast;
 /**
  * This is the main Activity that displays options to connect and send sensor data
  */
-public class MainActivity extends Activity {
+public class MainActivity extends Activity implements SensorEventListener {
     // Debugging
     private static final String TAG = "QuadcopterCommander";
     private static final boolean D = true;
+
+    // Sensor data
+    private SensorManager mSensorManager;
+    private Sensor mSensor;
 
     // Message types sent from the BluetoothConnectionService Handler
     public static final int MESSAGE_STATE_CHANGE = 1;
@@ -78,7 +86,6 @@ public class MainActivity extends Activity {
     // Member object for the Bluetooth service
     private BluetoothConnectionService mBluetoothService = null;
 
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -96,6 +103,10 @@ public class MainActivity extends Activity {
             finish();
             return;
         }
+
+        // Sensor init
+        mSensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
+        mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
     }
 
     @Override
@@ -118,6 +129,9 @@ public class MainActivity extends Activity {
     public synchronized void onResume() {
         super.onResume();
         if(D) Log.e(TAG, "+ ON RESUME +");
+
+        // Start listening to sensor data
+        mSensorManager.registerListener(this, mSensor, SensorManager.SENSOR_DELAY_GAME);
 
         // Performing this check in onResume() covers the case in which BT was
         // not enabled during onStart(), so we were paused to enable it...
@@ -143,16 +157,8 @@ public class MainActivity extends Activity {
         mOutEditText = (EditText) findViewById(R.id.edit_text_out);
         mOutEditText.setOnEditorActionListener(mWriteListener);
 
-        // Initialize the send button with a listener that for click events
+        // Initialize the send button
         mSendButton = (Button) findViewById(R.id.button_send);
-        mSendButton.setOnClickListener(new OnClickListener() {
-            public void onClick(View v) {
-                // Send a message using content of the edit text widget
-                TextView view = (TextView) findViewById(R.id.edit_text_out);
-                String message = "Sensor data\n";//view.getText().toString();
-                sendMessage(message);
-            }
-        });
 
         // Initialize the BluetoothConnectionService to perform bluetooth connections
         mBluetoothService = new BluetoothConnectionService(this, mHandler);
@@ -164,18 +170,14 @@ public class MainActivity extends Activity {
     @Override
     public synchronized void onPause() {
         super.onPause();
+        mSensorManager.unregisterListener(this);
         if(D) Log.e(TAG, "- ON PAUSE -");
-    }
-
-    @Override
-    public void onStop() {
-        super.onStop();
-        if(D) Log.e(TAG, "-- ON STOP --");
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
+        mSensorManager.unregisterListener(this);
         // Stop the Bluetooth service
         if (mBluetoothService != null) mBluetoothService.stop();
         if(D) Log.e(TAG, "--- ON DESTROY ---");
@@ -328,6 +330,18 @@ public class MainActivity extends Activity {
                 return true;
         }
         return false;
+    }
+
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+    }
+
+    public void onSensorChanged(SensorEvent event) {
+        String sensorData;
+        if (mSendButton.isPressed()){
+            sensorData = String.valueOf(event.values[0]) + " # " + String.valueOf(event.values[1])
+                    + " # " + String.valueOf(event.values[2]) + "\n";
+            sendMessage(sensorData);
+        }
     }
 
 }
