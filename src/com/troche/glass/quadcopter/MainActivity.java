@@ -40,7 +40,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 /**
- * This is the main Activity that displays the current chat session.
+ * This is the main Activity that displays options to connect and send sensor data
  */
 public class MainActivity extends Activity {
     // Debugging
@@ -59,7 +59,6 @@ public class MainActivity extends Activity {
     public static final String TOAST = "toast";
 
     // Intent request codes
-    private static final int REQUEST_CONNECT_DEVICE_SECURE = 1;
     private static final int REQUEST_CONNECT_DEVICE_INSECURE = 2;
     private static final int REQUEST_ENABLE_BT = 3;
 
@@ -76,8 +75,8 @@ public class MainActivity extends Activity {
     private StringBuffer mOutStringBuffer;
     // Local Bluetooth adapter
     private BluetoothAdapter mBluetoothAdapter = null;
-    // Member object for the chat services
-    private BluetoothConnectionService mChatService = null;
+    // Member object for the Bluetooth service
+    private BluetoothConnectionService mBluetoothService = null;
 
 
     @Override
@@ -105,13 +104,13 @@ public class MainActivity extends Activity {
         if(D) Log.e(TAG, "++ ON START ++");
 
         // If BT is not on, request that it be enabled.
-        // setupChat() will then be called during onActivityResult
+        // setupBluetooth() will then be called during onActivityResult
         if (!mBluetoothAdapter.isEnabled()) {
             Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
-        // Otherwise, setup the chat session
+        // Otherwise, setup the Bluetooth connection
         } else {
-            if (mChatService == null) setupChat();
+            if (mBluetoothService == null) setupBluetooth();
         }
     }
 
@@ -123,17 +122,17 @@ public class MainActivity extends Activity {
         // Performing this check in onResume() covers the case in which BT was
         // not enabled during onStart(), so we were paused to enable it...
         // onResume() will be called when ACTION_REQUEST_ENABLE activity returns.
-        if (mChatService != null) {
+        if (mBluetoothService != null) {
             // Only if the state is STATE_NONE, do we know that we haven't started already
-            if (mChatService.getState() == BluetoothConnectionService.STATE_NONE) {
-              // Start the Bluetooth chat services
-              mChatService.start();
+            if (mBluetoothService.getState() == BluetoothConnectionService.STATE_NONE) {
+              // Start the Bluetooth service
+              mBluetoothService.start();
             }
         }
     }
 
-    private void setupChat() {
-        Log.d(TAG, "setupChat()");
+    private void setupBluetooth() {
+        Log.d(TAG, "setupBluetooth()");
 
         // Initialize the array adapter for the conversation thread
         mConversationArrayAdapter = new ArrayAdapter<String>(this, R.layout.message);
@@ -150,13 +149,13 @@ public class MainActivity extends Activity {
             public void onClick(View v) {
                 // Send a message using content of the edit text widget
                 TextView view = (TextView) findViewById(R.id.edit_text_out);
-                String message = view.getText().toString();
+                String message = "Sensor data\n";//view.getText().toString();
                 sendMessage(message);
             }
         });
 
         // Initialize the BluetoothConnectionService to perform bluetooth connections
-        mChatService = new BluetoothConnectionService(this, mHandler);
+        mBluetoothService = new BluetoothConnectionService(this, mHandler);
 
         // Initialize the buffer for outgoing messages
         mOutStringBuffer = new StringBuffer("");
@@ -177,28 +176,18 @@ public class MainActivity extends Activity {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        // Stop the Bluetooth chat services
-        if (mChatService != null) mChatService.stop();
+        // Stop the Bluetooth service
+        if (mBluetoothService != null) mBluetoothService.stop();
         if(D) Log.e(TAG, "--- ON DESTROY ---");
     }
 
-    private void ensureDiscoverable() {
-        if(D) Log.d(TAG, "ensure discoverable");
-        if (mBluetoothAdapter.getScanMode() !=
-            BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE) {
-            Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
-            discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
-            startActivity(discoverableIntent);
-        }
-    }
-
     /**
-     * Sends a message.
+     * Sends a message through Bluetooth
      * @param message  A string of text to send.
      */
     private void sendMessage(String message) {
         // Check that we're actually connected before trying anything
-        if (mChatService.getState() != BluetoothConnectionService.STATE_CONNECTED) {
+        if (mBluetoothService.getState() != BluetoothConnectionService.STATE_CONNECTED) {
             Toast.makeText(this, R.string.not_connected, Toast.LENGTH_SHORT).show();
             return;
         }
@@ -209,7 +198,7 @@ public class MainActivity extends Activity {
         if (message.length() > 0) {
             // Get the message bytes and tell the BluetoothConnectionService to write
             byte[] send = message.getBytes();
-            mChatService.write(send);
+            mBluetoothService.write(send);
 
             // Reset out string buffer to zero and clear the edit text field
             mOutStringBuffer.setLength(0);
@@ -245,7 +234,7 @@ public class MainActivity extends Activity {
     private final Handler mHandler = new Handler() {
         @Override
         public void handleMessage(Message msg) {
-            switch (msg.what) {
+        switch (msg.what) {
             case MESSAGE_STATE_CHANGE:
                 if(D) Log.i(TAG, "MESSAGE_STATE_CHANGE: " + msg.arg1);
                 switch (msg.arg1) {
@@ -284,47 +273,41 @@ public class MainActivity extends Activity {
                 Toast.makeText(getApplicationContext(), msg.getData().getString(TOAST),
                         Toast.LENGTH_SHORT).show();
                 break;
-            }
+        }
         }
     };
 
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         if(D) Log.d(TAG, "onActivityResult " + resultCode);
         switch (requestCode) {
-        case REQUEST_CONNECT_DEVICE_SECURE:
-            // When BluetoothDevicePicker returns with a device to connect
-            if (resultCode == Activity.RESULT_OK) {
-                connectDevice(data, true);
-            }
-            break;
-        case REQUEST_CONNECT_DEVICE_INSECURE:
-            // When BluetoothDevicePicker returns with a device to connect
-            if (resultCode == Activity.RESULT_OK) {
-                connectDevice(data, false);
-            }
-            break;
-        case REQUEST_ENABLE_BT:
-            // When the request to enable Bluetooth returns
-            if (resultCode == Activity.RESULT_OK) {
-                // Bluetooth is now enabled, so set up a chat session
-                setupChat();
-            } else {
-                // User did not enable Bluetooth or an error occurred
-                Log.d(TAG, "BT not enabled");
-                Toast.makeText(this, R.string.bt_not_enabled_leaving, Toast.LENGTH_SHORT).show();
-                finish();
-            }
+            case REQUEST_CONNECT_DEVICE_INSECURE:
+                // When BluetoothDevicePicker returns with a device to connect
+                if (resultCode == Activity.RESULT_OK) {
+                    connectDevice(data, false);
+                }
+                break;
+            case REQUEST_ENABLE_BT:
+                // When the request to enable Bluetooth returns
+                if (resultCode == Activity.RESULT_OK) {
+                    // Bluetooth is now enabled, so set up a Bluetooth connection
+                    setupBluetooth();
+                } else {
+                    // User did not enable Bluetooth or an error occurred
+                    Log.d(TAG, "BT not enabled");
+                    Toast.makeText(this, R.string.bt_not_enabled_leaving, Toast.LENGTH_SHORT).show();
+                    finish();
+                }
         }
     }
 
-    private void connectDevice(Intent data, boolean secure) {
+    private void connectDevice(Intent data, boolean isSecure) {
         // Get the device MAC address
         String address = data.getExtras()
             .getString(BluetoothDevicePicker.EXTRA_DEVICE_ADDRESS);
         // Get the BluetoothDevice object
         BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
         // Attempt to connect to the device
-        mChatService.connect(device, secure);
+        mBluetoothService.connect(device, isSecure);
     }
 
     @Override

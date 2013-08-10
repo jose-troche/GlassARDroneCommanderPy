@@ -2,9 +2,6 @@
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
 
     <string name="app_name">Quadcopter Commander</string>
-    <!--Temp-->
-    <string name="btn_ON">LED ON</string>
-    <string name="btn_OFF">LED OFF</string>
 
     <!--  MainActivity -->
     <string name="send">Send</string>
