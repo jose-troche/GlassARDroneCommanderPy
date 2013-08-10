@@ -24,7 +24,7 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".DeviceListActivity"
+        <activity android:name=".BluetoothDevicePicker"
                   android:label="@string/select_device"
                   android:theme="@android:style/Theme.Holo.Dialog"
                   android:configChanges="orientation|keyboardHidden" />

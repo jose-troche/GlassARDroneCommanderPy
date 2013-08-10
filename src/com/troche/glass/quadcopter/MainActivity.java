@@ -292,13 +292,13 @@ public class MainActivity extends Activity {
         if(D) Log.d(TAG, "onActivityResult " + resultCode);
         switch (requestCode) {
         case REQUEST_CONNECT_DEVICE_SECURE:
-            // When DeviceListActivity returns with a device to connect
+            // When BluetoothDevicePicker returns with a device to connect
             if (resultCode == Activity.RESULT_OK) {
                 connectDevice(data, true);
             }
             break;
         case REQUEST_CONNECT_DEVICE_INSECURE:
-            // When DeviceListActivity returns with a device to connect
+            // When BluetoothDevicePicker returns with a device to connect
             if (resultCode == Activity.RESULT_OK) {
                 connectDevice(data, false);
             }
@@ -320,7 +320,7 @@ public class MainActivity extends Activity {
     private void connectDevice(Intent data, boolean secure) {
         // Get the device MAC address
         String address = data.getExtras()
-            .getString(DeviceListActivity.EXTRA_DEVICE_ADDRESS);
+            .getString(BluetoothDevicePicker.EXTRA_DEVICE_ADDRESS);
         // Get the BluetoothDevice object
         BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
         // Attempt to connect to the device
@@ -339,13 +339,13 @@ public class MainActivity extends Activity {
         Intent serverIntent = null;
         switch (item.getItemId()) {
         case R.id.secure_connect_scan:
-            // Launch the DeviceListActivity to see devices and do scan
-            serverIntent = new Intent(this, DeviceListActivity.class);
+            // Launch the BluetoothDevicePicker to see devices and do scan
+            serverIntent = new Intent(this, BluetoothDevicePicker.class);
             startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE_SECURE);
             return true;
         case R.id.insecure_connect_scan:
-            // Launch the DeviceListActivity to see devices and do scan
-            serverIntent = new Intent(this, DeviceListActivity.class);
+            // Launch the BluetoothDevicePicker to see devices and do scan
+            serverIntent = new Intent(this, BluetoothDevicePicker.class);
             startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE_INSECURE);
             return true;
         case R.id.discoverable:
