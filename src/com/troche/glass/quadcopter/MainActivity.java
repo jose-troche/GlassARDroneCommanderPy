@@ -29,19 +29,14 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
-import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.View.OnClickListener;
-import android.view.inputmethod.EditorInfo;
-import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ListView;
+import android.view.WindowManager;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ToggleButton;
 
 /**
  * This is the main Activity that displays options to connect and send sensor data
@@ -71,14 +66,13 @@ public class MainActivity extends Activity implements SensorEventListener {
     private static final int REQUEST_ENABLE_BT = 3;
 
     // Layout Views
-    private ListView mConversationView;
-    private EditText mOutEditText;
-    private Button mSendButton;
+    private TextView mTextOutput;
+    private TextView mTextInput;
+    private ToggleButton mTrackingToggle;
+    private ToggleButton mTakeoffToggle;
 
     // Name of the connected device
     private String mConnectedDeviceName = null;
-    // Array adapter for the conversation thread
-    private ArrayAdapter<String> mConversationArrayAdapter;
     // String buffer for outgoing messages
     private StringBuffer mOutStringBuffer;
     // Local Bluetooth adapter
@@ -103,6 +97,10 @@ public class MainActivity extends Activity implements SensorEventListener {
             finish();
             return;
         }
+
+        // Toggle Buttons
+        mTakeoffToggle = (ToggleButton) findViewById(R.id.takeoff_toggle);
+        mTrackingToggle = (ToggleButton) findViewById(R.id.tracking_toggle);
 
         // Sensor init
         mSensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
@@ -130,17 +128,14 @@ public class MainActivity extends Activity implements SensorEventListener {
         super.onResume();
         if(D) Log.e(TAG, "+ ON RESUME +");
 
-        // Start listening to sensor data
-        mSensorManager.registerListener(this, mSensor, SensorManager.SENSOR_DELAY_GAME);
-
         // Performing this check in onResume() covers the case in which BT was
         // not enabled during onStart(), so we were paused to enable it...
         // onResume() will be called when ACTION_REQUEST_ENABLE activity returns.
         if (mBluetoothService != null) {
             // Only if the state is STATE_NONE, do we know that we haven't started already
             if (mBluetoothService.getState() == BluetoothConnectionService.STATE_NONE) {
-              // Start the Bluetooth service
-              mBluetoothService.start();
+                // Start the Bluetooth service
+                mBluetoothService.start();
             }
         }
     }
@@ -148,17 +143,10 @@ public class MainActivity extends Activity implements SensorEventListener {
     private void setupBluetooth() {
         Log.d(TAG, "setupBluetooth()");
 
-        // Initialize the array adapter for the conversation thread
-        mConversationArrayAdapter = new ArrayAdapter<String>(this, R.layout.message);
-        mConversationView = (ListView) findViewById(R.id.in);
-        mConversationView.setAdapter(mConversationArrayAdapter);
 
-        // Initialize the compose field with a listener for the return key
-        mOutEditText = (EditText) findViewById(R.id.edit_text_out);
-        mOutEditText.setOnEditorActionListener(mWriteListener);
-
-        // Initialize the send button
-        mSendButton = (Button) findViewById(R.id.button_send);
+        // Initialize text input and output views
+        mTextOutput = (TextView) findViewById(R.id.text_output);
+        mTextInput = (TextView) findViewById(R.id.text_input);
 
         // Initialize the BluetoothConnectionService to perform bluetooth connections
         mBluetoothService = new BluetoothConnectionService(this, mHandler);
@@ -170,14 +158,14 @@ public class MainActivity extends Activity implements SensorEventListener {
     @Override
     public synchronized void onPause() {
         super.onPause();
-        mSensorManager.unregisterListener(this);
+        stopSensorTracking();
         if(D) Log.e(TAG, "- ON PAUSE -");
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-        mSensorManager.unregisterListener(this);
+        stopSensorTracking();
         // Stop the Bluetooth service
         if (mBluetoothService != null) mBluetoothService.stop();
         if(D) Log.e(TAG, "--- ON DESTROY ---");
@@ -194,33 +182,16 @@ public class MainActivity extends Activity implements SensorEventListener {
             return;
         }
 
-        if (message.length() <= 0) message = "No Message";
-
         // Check that there's actually something to send
         if (message.length() > 0) {
             // Get the message bytes and tell the BluetoothConnectionService to write
             byte[] send = message.getBytes();
             mBluetoothService.write(send);
 
-            // Reset out string buffer to zero and clear the edit text field
+            // Reset out string buffer to zero
             mOutStringBuffer.setLength(0);
-            mOutEditText.setText(mOutStringBuffer);
         }
     }
-
-    // The action listener for the EditText widget, to listen for the return key
-    private TextView.OnEditorActionListener mWriteListener =
-        new TextView.OnEditorActionListener() {
-        public boolean onEditorAction(TextView view, int actionId, KeyEvent event) {
-            // If the action is a key-up event on the return key, send the message
-            if (actionId == EditorInfo.IME_NULL && event.getAction() == KeyEvent.ACTION_UP) {
-                String message = view.getText().toString();
-                sendMessage(message);
-            }
-            if(D) Log.i(TAG, "END onEditorAction");
-            return true;
-        }
-    };
 
     private final void setStatus(int resId) {
         final ActionBar actionBar = getActionBar();
@@ -242,12 +213,17 @@ public class MainActivity extends Activity implements SensorEventListener {
                 switch (msg.arg1) {
                 case BluetoothConnectionService.STATE_CONNECTED:
                     setStatus(getString(R.string.title_connected_to, mConnectedDeviceName));
-                    mConversationArrayAdapter.clear();
+                    mTextOutput.setText("");
+                    mTextInput.setText("");
+                    mTakeoffToggle.setEnabled(true);
+                    mTakeoffToggle.setChecked(false);
+                    mTrackingToggle.setEnabled(true);
+                    mTrackingToggle.setChecked(false);
                     break;
                 case BluetoothConnectionService.STATE_CONNECTING:
                     setStatus(R.string.title_connecting);
                     break;
-                case BluetoothConnectionService.STATE_LISTEN:
+                case BluetoothConnectionService.STATE_WAITING:
                 case BluetoothConnectionService.STATE_NONE:
                     setStatus(R.string.title_not_connected);
                     break;
@@ -257,13 +233,13 @@ public class MainActivity extends Activity implements SensorEventListener {
                 byte[] writeBuf = (byte[]) msg.obj;
                 // construct a string from the buffer
                 String writeMessage = new String(writeBuf);
-                mConversationArrayAdapter.add("Me:  " + writeMessage);
+                mTextOutput.setText(writeMessage);
                 break;
             case MESSAGE_READ:
                 byte[] readBuf = (byte[]) msg.obj;
                 // construct a string from the valid bytes in the buffer
                 String readMessage = new String(readBuf, 0, msg.arg1);
-                mConversationArrayAdapter.add(mConnectedDeviceName+":  " + readMessage);
+                mTextInput.setText(mConnectedDeviceName+":  " + readMessage);
                 break;
             case MESSAGE_DEVICE_NAME:
                 // save the connected device's name
@@ -321,7 +297,7 @@ public class MainActivity extends Activity implements SensorEventListener {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        Intent serverIntent = null;
+        Intent serverIntent;
         switch (item.getItemId()) {
             case R.id.insecure_connect_scan:
                 // Launch the BluetoothDevicePicker to see devices and do scan
@@ -332,16 +308,47 @@ public class MainActivity extends Activity implements SensorEventListener {
         return false;
     }
 
+    public void onTakeoffToggleClicked(View view) {
+        boolean on = ((ToggleButton) view).isChecked();
+
+        if (on) {
+            sendMessage("Takeoff\n");
+        } else {
+            sendMessage("Land\n");
+        }
+    }
+
+    public void onSensorTrackingToggleClicked(View view) {
+        boolean on = ((ToggleButton) view).isChecked();
+
+        if (on) {
+            startSensorTracking();
+        } else {
+            stopSensorTracking();
+        }
+    }
+
+    private void startSensorTracking(){
+        // Start listening to sensor data
+        mSensorManager.registerListener(this, mSensor, SensorManager.SENSOR_DELAY_UI);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+    }
+
+    private void stopSensorTracking(){
+        // Stop listening to sensor data
+        mSensorManager.unregisterListener(this);
+        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+    }
+
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
     }
 
     public void onSensorChanged(SensorEvent event) {
         String sensorData;
-        if (mSendButton.isPressed()){
-            sensorData = String.valueOf(event.values[0]) + " # " + String.valueOf(event.values[1])
-                    + " # " + String.valueOf(event.values[2]) + "\n";
-            sendMessage(sensorData);
-        }
+
+        sensorData = String.valueOf(event.values[0]) + " # " + String.valueOf(event.values[1])
+                + " # " + String.valueOf(event.values[2]) + "\n";
+        sendMessage(sensorData);
     }
 
 }
