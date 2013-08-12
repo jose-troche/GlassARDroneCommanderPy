@@ -88,6 +88,9 @@ public class MainActivity extends Activity implements SensorEventListener {
         // Set up the window layout
         setContentView(R.layout.main);
 
+        // Do not allow to sleep
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+
         // Get local Bluetooth adapter
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
@@ -166,6 +169,8 @@ public class MainActivity extends Activity implements SensorEventListener {
     public void onDestroy() {
         super.onDestroy();
         stopSensorTracking();
+        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        sendMessage("Quit\n");
         // Stop the Bluetooth service
         if (mBluetoothService != null) mBluetoothService.stop();
         if(D) Log.e(TAG, "--- ON DESTROY ---");
@@ -331,13 +336,11 @@ public class MainActivity extends Activity implements SensorEventListener {
     private void startSensorTracking(){
         // Start listening to sensor data
         mSensorManager.registerListener(this, mSensor, SensorManager.SENSOR_DELAY_UI);
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     }
 
     private void stopSensorTracking(){
         // Stop listening to sensor data
         mSensorManager.unregisterListener(this);
-        getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     }
 
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
