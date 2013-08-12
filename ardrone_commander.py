@@ -6,11 +6,10 @@ import sys
 
 drone = libardrone.ARDrone()
 
-# Keep running until q or Ctrl+C
 print "Receiving commands... ('Quit' to exit)"
 
 try:
-    while True:
+    while True:  # Keep running until Quit or Ctrl+C
         command = sys.stdin.readline().strip().lower()
 
         if command == 'quit':
