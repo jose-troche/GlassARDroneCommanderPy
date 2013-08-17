@@ -49,6 +49,8 @@ public class MainActivity extends Activity implements SensorEventListener {
     // Sensor data
     private SensorManager mSensorManager;
     private Sensor mSensor;
+    private float[] mRotationMatrix;
+    private float[] mOrientation;
 
     // Message types sent from the BluetoothConnectionService Handler
     public static final int MESSAGE_STATE_CHANGE = 1;
@@ -107,7 +109,9 @@ public class MainActivity extends Activity implements SensorEventListener {
 
         // Sensor init
         mSensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
-        mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
+        mRotationMatrix = new float[16];
+        mOrientation = new float[3];
     }
 
     @Override
@@ -348,10 +352,24 @@ public class MainActivity extends Activity implements SensorEventListener {
 
     public void onSensorChanged(SensorEvent event) {
         String sensorData;
+        float azimuth, pitch, roll;
 
-        sensorData = String.valueOf(event.values[0]) + " # " + String.valueOf(event.values[1])
-                + " # " + String.valueOf(event.values[2]) + "\n";
+        SensorManager.getRotationMatrixFromVector(mRotationMatrix, event.values);
+        SensorManager.remapCoordinateSystem(mRotationMatrix,
+                SensorManager.AXIS_X, SensorManager.AXIS_Z, mRotationMatrix);
+        SensorManager.getOrientation(mRotationMatrix, mOrientation);
+
+        toDegrees(mOrientation);
+        azimuth = mOrientation[0];
+        pitch = -mOrientation[1];
+        roll = mOrientation[2];
+
+        sensorData = String.format("%+03.0f  %+03.0f  %+03.0f\n", azimuth, pitch, roll);
         sendMessage(sensorData);
+    }
+
+    private void toDegrees(float [] v){
+        for (int i=0; i<v.length; i++) v[i]=(float)Math.toDegrees(v[i]);
     }
 
 }
