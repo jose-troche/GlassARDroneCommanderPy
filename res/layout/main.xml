@@ -19,17 +19,26 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     >
+    <TextView android:id="@+id/text_sensor_data"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:textSize="18sp"
+              android:padding="5dp"
+              android:layout_marginLeft="20dp"
+            />
     <TextView android:id="@+id/text_output"
               android:layout_width="match_parent"
               android:layout_height="wrap_content"
               android:textSize="18sp"
               android:padding="5dp"
+              android:layout_marginLeft="20dp"
             />
     <TextView android:id="@+id/text_input"
               android:layout_width="match_parent"
               android:layout_height="wrap_content"
               android:textSize="18sp"
               android:padding="5dp"
+              android:layout_marginLeft="20dp"
             />
 
     <RelativeLayout
@@ -39,14 +48,23 @@
 
         <ToggleButton
                 android:id="@+id/takeoff_toggle"
-                android:layout_width="wrap_content"
+                android:layout_width="100dp"
                 android:layout_height="wrap_content"
                 android:textOn="Land"
                 android:textOff="Take Off"
                 android:onClick="onTakeoffToggleClicked"
-                android:enabled="false"
                 android:layout_alignParentBottom="true"
                 android:layout_alignParentLeft="true"/>
+
+        <ToggleButton
+                android:id="@+id/elevation_toggle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textOn="Elevation"
+                android:textOff="Elevation"
+                android:layout_alignParentBottom="true"
+                android:layout_centerHorizontal="true"
+                />
 
         <ToggleButton
                 android:id="@+id/tracking_toggle"
@@ -55,7 +73,6 @@
                 android:textOn="Stop Tracking"
                 android:textOff="Start Tracking"
                 android:onClick="onSensorTrackingToggleClicked"
-                android:enabled="false"
                 android:layout_alignParentBottom="true"
                 android:layout_alignParentRight="true"/>
     </RelativeLayout>

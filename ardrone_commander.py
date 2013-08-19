@@ -16,13 +16,32 @@ try:
             break
         elif command == 'takeoff':
             drone.takeoff()
-        elif command == 'land':
+            drone.hover
+        elif command == 'land' or command == 'c':
             drone.land()
+        elif command == 'up' or command == 'o':
+            drone.move_up()
+        elif command == 'down' or command == 'l':
+            drone.move_down()
+        elif command == 'left' or command == 's':
+            drone.move_left()
+        elif command == 'right' or command == 'f':
+            drone.move_right()
+        elif command == 'forward' or command == 'e':
+            drone.move_forward()
+        elif command == 'backward' or command == 'd':
+            drone.move_backward()
+        elif command == 'turn_left' or command == 'a':
+            drone.turn_left()
+        elif command == 'turn_right' or command == 'g':
+            drone.turn_right()
+        else:
+            drone.hover
 
-        if command:
-            print "Command: ", command
+        print "Command: ", command
 
-        drone.hover
+        #print 'in loop'
+        #drone.hover
 
 finally:
     print "Bye"

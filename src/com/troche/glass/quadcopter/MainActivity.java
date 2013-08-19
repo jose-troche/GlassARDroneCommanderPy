@@ -49,8 +49,18 @@ public class MainActivity extends Activity implements SensorEventListener {
     // Sensor data
     private SensorManager mSensorManager;
     private Sensor mSensor;
+    private Float mInitialHeading;
     private float[] mRotationMatrix;
     private float[] mOrientation;
+
+    // Sensor constants
+    private static final int HEADING_CENTER_POS = 15;
+    private static final int HEADING_CENTER_NEG = -15;
+    private static final int PITCH_CENTER_POS = 20;
+    private static final int PITCH_CENTER_NEG = -20;
+    private static final int ROLL_CENTER_POS = 20;
+    private static final int ROLL_CENTER_NEG = -20;
+    private static final int THRESHOLD = 5;
 
     // Message types sent from the BluetoothConnectionService Handler
     public static final int MESSAGE_STATE_CHANGE = 1;
@@ -68,10 +78,13 @@ public class MainActivity extends Activity implements SensorEventListener {
     private static final int REQUEST_ENABLE_BT = 3;
 
     // Layout Views
+    private TextView mTextSensorData;
     private TextView mTextOutput;
     private TextView mTextInput;
     private ToggleButton mTrackingToggle;
     private ToggleButton mTakeoffToggle;
+    private ToggleButton mElevationToggle;
+
 
     // Name of the connected device
     private String mConnectedDeviceName = null;
@@ -106,12 +119,18 @@ public class MainActivity extends Activity implements SensorEventListener {
         // Toggle Buttons
         mTakeoffToggle = (ToggleButton) findViewById(R.id.takeoff_toggle);
         mTrackingToggle = (ToggleButton) findViewById(R.id.tracking_toggle);
+        mElevationToggle = (ToggleButton) findViewById(R.id.elevation_toggle);
 
         // Sensor init
         mSensorManager = (SensorManager)getSystemService(SENSOR_SERVICE);
         mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
         mRotationMatrix = new float[16];
         mOrientation = new float[3];
+
+        // Initialize text views
+        mTextSensorData = (TextView) findViewById(R.id.text_sensor_data);
+        mTextOutput = (TextView) findViewById(R.id.text_output);
+        mTextInput = (TextView) findViewById(R.id.text_input);
     }
 
     @Override
@@ -150,11 +169,6 @@ public class MainActivity extends Activity implements SensorEventListener {
     private void setupBluetooth() {
         Log.d(TAG, "setupBluetooth()");
 
-
-        // Initialize text input and output views
-        mTextOutput = (TextView) findViewById(R.id.text_output);
-        mTextInput = (TextView) findViewById(R.id.text_input);
-
         // Initialize the BluetoothConnectionService to perform bluetooth connections
         mBluetoothService = new BluetoothConnectionService(this, mHandler);
 
@@ -185,16 +199,18 @@ public class MainActivity extends Activity implements SensorEventListener {
      * @param message  A string of text to send.
      */
     private void sendMessage(String message) {
+        mTextOutput.setText(message);
+
         // Check that we're actually connected before trying anything
         if (mBluetoothService.getState() != BluetoothConnectionService.STATE_CONNECTED) {
-            Toast.makeText(this, R.string.not_connected, Toast.LENGTH_SHORT).show();
+            //Toast.makeText(this, R.string.not_connected, Toast.LENGTH_SHORT).show();
             return;
         }
 
         // Check that there's actually something to send
         if (message.length() > 0) {
             // Get the message bytes and tell the BluetoothConnectionService to write
-            byte[] send = message.getBytes();
+            byte[] send = (message + "\n").getBytes();
             mBluetoothService.write(send);
 
             // Reset out string buffer to zero
@@ -222,11 +238,10 @@ public class MainActivity extends Activity implements SensorEventListener {
                 switch (msg.arg1) {
                 case BluetoothConnectionService.STATE_CONNECTED:
                     setStatus(getString(R.string.title_connected_to, mConnectedDeviceName));
+                    mTextSensorData.setText("");
                     mTextOutput.setText("");
                     mTextInput.setText("");
-                    mTakeoffToggle.setEnabled(true);
                     mTakeoffToggle.setChecked(false);
-                    mTrackingToggle.setEnabled(true);
                     mTrackingToggle.setChecked(false);
                     break;
                 case BluetoothConnectionService.STATE_CONNECTING:
@@ -242,7 +257,7 @@ public class MainActivity extends Activity implements SensorEventListener {
                 byte[] writeBuf = (byte[]) msg.obj;
                 // construct a string from the buffer
                 String writeMessage = new String(writeBuf);
-                mTextOutput.setText(writeMessage);
+                // mTextOutput.setText(writeMessage);
                 break;
             case MESSAGE_READ:
                 byte[] readBuf = (byte[]) msg.obj;
@@ -321,9 +336,9 @@ public class MainActivity extends Activity implements SensorEventListener {
         boolean on = ((ToggleButton) view).isChecked();
 
         if (on) {
-            sendMessage("Takeoff\n");
+            sendMessage("Takeoff");
         } else {
-            sendMessage("Land\n");
+            sendMessage("Land");
         }
     }
 
@@ -345,14 +360,19 @@ public class MainActivity extends Activity implements SensorEventListener {
     private void stopSensorTracking(){
         // Stop listening to sensor data
         mSensorManager.unregisterListener(this);
+
+        // Reset initial heading
+        mInitialHeading = null;
     }
 
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
     }
 
     public void onSensorChanged(SensorEvent event) {
+        if (event.sensor.getType() != Sensor.TYPE_ROTATION_VECTOR) return;
+
         String sensorData;
-        float azimuth, pitch, roll;
+        float heading, pitch, roll;
 
         SensorManager.getRotationMatrixFromVector(mRotationMatrix, event.values);
         SensorManager.remapCoordinateSystem(mRotationMatrix,
@@ -360,12 +380,45 @@ public class MainActivity extends Activity implements SensorEventListener {
         SensorManager.getOrientation(mRotationMatrix, mOrientation);
 
         toDegrees(mOrientation);
-        azimuth = mOrientation[0];
+
+        if (mInitialHeading == null) {mInitialHeading = new Float(mOrientation[0]);}
+        heading = mOrientation[0];// - mInitialHeading;
         pitch = -mOrientation[1];
         roll = mOrientation[2];
 
-        sensorData = String.format("%+03.0f  %+03.0f  %+03.0f\n", azimuth, pitch, roll);
-        sendMessage(sensorData);
+        sensorData = String.format("H: %+03.0f  P: %+03.0f  R: %+03.0f", heading, pitch, roll);
+        mTextSensorData.setText(sensorData);
+
+        if (triggerCommand(pitch, PITCH_CENTER_POS, THRESHOLD)){
+            if (mElevationToggle.isChecked()){
+                sendMessage("Up");
+            }
+            else {
+                sendMessage("Backward");
+            }
+        }
+        else if (triggerCommand(pitch, PITCH_CENTER_NEG, THRESHOLD)){
+            if (mElevationToggle.isChecked()){
+                sendMessage("Down");
+            }
+            else {
+                sendMessage("Forward");
+            }
+        }
+        else if (triggerCommand(roll, ROLL_CENTER_POS, THRESHOLD)){
+            sendMessage("Right");
+        }
+        else if (triggerCommand(roll, ROLL_CENTER_NEG, THRESHOLD)){
+            sendMessage("Left");
+        }
+        else {
+            sendMessage("None");
+        }
+
+    }
+
+    private boolean triggerCommand(float value, int center, int threshold){
+        return Math.abs(center - value) < threshold;
     }
 
     private void toDegrees(float [] v){
