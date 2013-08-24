@@ -23,6 +23,7 @@ If you need more specific details read [prerequisites](prerequisites.md).
 * With Android Studio or Android Developer Tools, compile and deploy this application to
 Google Glass
 * In your computer, listen on the Bluetooth serial port and pipe it to ardrone_commmander.py:
+
 ```
     cd GlassQuadcopterCommander
     adb install -r out/production/GlassQuadcopterCommander/GlassQuadcopterCommander.apk
