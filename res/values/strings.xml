@@ -25,5 +25,8 @@
     <!-- Voice commands -->
     <string name="voice_takeoff">Taking off</string>
     <string name="voice_land">Landing</string>
+    <string name="voice_elevation_on">Elevation On</string>
+    <string name="voice_elevation_off">Elevation Off</string>
+    <string name="voice_bye">Good bye</string>
 
 </resources>

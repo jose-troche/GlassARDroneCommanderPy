@@ -62,6 +62,7 @@
                 android:layout_height="wrap_content"
                 android:textOn="Elevation"
                 android:textOff="Elevation"
+                android:onClick="onElevationToggleClicked"
                 android:checked="true"
                 android:layout_alignParentBottom="true"
                 android:layout_centerHorizontal="true"

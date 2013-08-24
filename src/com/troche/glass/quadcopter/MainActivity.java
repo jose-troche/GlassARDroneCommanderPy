@@ -62,10 +62,10 @@ public class MainActivity extends Activity implements
     // Sensor constants
     private static final int HEADING_THRESHOLD_POS = 15;
     private static final int HEADING_THRESHOLD_NEG = -15;
-    private static final int PITCH_THRESHOLD_POS = 20;
-    private static final int PITCH_THRESHOLD_NEG = -15;
-    private static final int ROLL_THRESHOLD_POS = 20;
-    private static final int ROLL_THRESHOLD_NEG = -20;
+    private static final int PITCH_THRESHOLD_POS = 15;
+    private static final int PITCH_THRESHOLD_NEG = -12;
+    private static final int ROLL_THRESHOLD_POS = 15;
+    private static final int ROLL_THRESHOLD_NEG = -15;
 
     // Message types sent from the BluetoothConnectionService Handler
     public static final int MESSAGE_STATE_CHANGE = 1;
@@ -190,6 +190,7 @@ public class MainActivity extends Activity implements
 
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         sendMessage("Quit\n");
+        speak(R.string.voice_bye);
         mSpeech.shutdown();
 
         // Stop the Bluetooth service
@@ -350,18 +351,26 @@ public class MainActivity extends Activity implements
 
     public void onTakeoffToggleClicked(View view) {
         boolean on = ((ToggleButton) view).isChecked();
-        String voiceCommand;
 
         if (on) {
             sendMessage("Takeoff");
-            voiceCommand = getString(R.string.voice_takeoff);
+            speak(R.string.voice_takeoff);
 
         } else {
             sendMessage("Land");
-            voiceCommand = getString(R.string.voice_land);
+            speak(R.string.voice_land);
         }
-        mSpeech.speak(voiceCommand , TextToSpeech.QUEUE_FLUSH, null);
     }
+
+    public void onElevationToggleClicked(View view) {
+        boolean on = ((ToggleButton) view).isChecked();
+        speak(on ? R.string.voice_elevation_on : R.string.voice_elevation_off);
+    }
+
+    private void speak(int voiceCommandId){
+        mSpeech.speak(getString(voiceCommandId), TextToSpeech.QUEUE_FLUSH, null);
+    }
+
 
     public void onSensorTrackingToggleClicked(View view) {
         boolean on = ((ToggleButton) view).isChecked();
