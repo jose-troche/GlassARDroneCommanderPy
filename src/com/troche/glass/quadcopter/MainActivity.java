@@ -60,13 +60,12 @@ public class MainActivity extends Activity implements
     private TextToSpeech mSpeech;
 
     // Sensor constants
-    private static final int HEADING_CENTER_POS = 15;
-    private static final int HEADING_CENTER_NEG = -15;
-    private static final int PITCH_CENTER_POS = 20;
-    private static final int PITCH_CENTER_NEG = -20;
-    private static final int ROLL_CENTER_POS = 20;
-    private static final int ROLL_CENTER_NEG = -20;
-    private static final int THRESHOLD = 5;
+    private static final int HEADING_THRESHOLD_POS = 15;
+    private static final int HEADING_THRESHOLD_NEG = -15;
+    private static final int PITCH_THRESHOLD_POS = 20;
+    private static final int PITCH_THRESHOLD_NEG = -15;
+    private static final int ROLL_THRESHOLD_POS = 20;
+    private static final int ROLL_THRESHOLD_NEG = -20;
 
     // Message types sent from the BluetoothConnectionService Handler
     public static final int MESSAGE_STATE_CHANGE = 1;
@@ -90,7 +89,6 @@ public class MainActivity extends Activity implements
     private ToggleButton mTrackingToggle;
     private ToggleButton mTakeoffToggle;
     private ToggleButton mElevationToggle;
-
 
     // Name of the connected device
     private String mConnectedDeviceName = null;
@@ -197,12 +195,6 @@ public class MainActivity extends Activity implements
         // Stop the Bluetooth service
         if (mBluetoothService != null) mBluetoothService.stop();
         if(D) Log.e(TAG, "--- ON DESTROY ---");
-    }
-
-    @Override
-    public void onInit(int status) {
-        // Called when the text-to-speech engine is initialized; we don't need
-        // to do anything here.
     }
 
     private final void setStatus(int resId) {
@@ -394,7 +386,13 @@ public class MainActivity extends Activity implements
         mInitialHeading = null;
     }
 
+    @Override
+    public void onInit(int status) {
+        // Called when the text-to-speech engine is initialized. Nothing to do here.
+    }
+
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
+        // Called when sensor accuracy changes. Nothing to do here.
     }
 
     public void onSensorChanged(SensorEvent event) {
@@ -416,10 +414,12 @@ public class MainActivity extends Activity implements
         pitch = -mOrientation[1];
         roll = mOrientation[2];
 
-        sensorData = String.format("P: %+03.0f  R: %+03.0f  H: %+03.0f", pitch, roll, heading);
+        sensorData = String.format("Pitch: %+03.0f  Roll: %+03.0f  Heading: %+03.0f",
+                pitch, roll, heading);
+
         mTextSensorData.setText(sensorData);
 
-        if (triggerCommand(pitch, PITCH_CENTER_POS, THRESHOLD)){
+        if (triggerCommand(pitch, PITCH_THRESHOLD_POS)){
             if (mElevationToggle.isChecked()){
                 sendMessage("Up");
             }
@@ -427,7 +427,7 @@ public class MainActivity extends Activity implements
                 sendMessage("Backward");
             }
         }
-        else if (triggerCommand(pitch, PITCH_CENTER_NEG, THRESHOLD)){
+        else if (triggerCommand(pitch, PITCH_THRESHOLD_NEG)){
             if (mElevationToggle.isChecked()){
                 sendMessage("Down");
             }
@@ -439,23 +439,22 @@ public class MainActivity extends Activity implements
             commandSent = false;
         }
 
-        if (triggerCommand(roll, ROLL_CENTER_POS, THRESHOLD)){
+        if (triggerCommand(roll, ROLL_THRESHOLD_POS)){
             sendMessage("Right");
         }
-        else if (triggerCommand(roll, ROLL_CENTER_NEG, THRESHOLD)){
+        else if (triggerCommand(roll, ROLL_THRESHOLD_NEG)){
             sendMessage("Left");
         }
         else if (!commandSent){
             sendMessage("None");
         }
-
     }
 
     /**
      * Determines if a command should be triggered depending on the sensor values
      **/
-    private boolean triggerCommand(float value, int center, int threshold){
-        return Math.abs(center - value) < threshold;
+    private boolean triggerCommand(float value, int threshold){
+        return threshold > 0 ? value > threshold : value < threshold;
     }
 
     /**

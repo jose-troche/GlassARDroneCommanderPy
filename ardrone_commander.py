@@ -1,17 +1,20 @@
 #!/usr/bin/python
 
-# export PYTHONPATH=<libardrone> so Python can find ardrone library
-import libardrone
+# Set PYTHONPATH so Python can find the ARDrone library. E.g.
+# export PYTHONPATH=$HOME/code
+#
+# Python ARDrone lib can be found here https://github.com/venthur/python-ardrone
+from ardrone_py import libardrone
 import sys
 
 drone = libardrone.ARDrone()
-drone.halt()
 drone.reset()
 
 print "Receiving commands... (q to exit)"
 
 try:
     while True:  # Keep running until Quit or Ctrl+C
+
         command = sys.stdin.readline().strip().lower()
 
         if command == 'quit' or command == 'q':
