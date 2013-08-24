@@ -5,6 +5,8 @@ import libardrone
 import sys
 
 drone = libardrone.ARDrone()
+drone.halt()
+drone.reset()
 
 print "Receiving commands... (q to exit)"
 
@@ -14,9 +16,8 @@ try:
 
         if command == 'quit' or command == 'q':
             break
-        elif command == 'takeoff':
+        elif command == 'takeoff' or command == 't':
             drone.takeoff()
-            drone.hover
         elif command == 'land' or command == 'c':
             drone.land()
         elif command == 'up' or command == 'o':
@@ -36,12 +37,9 @@ try:
         elif command == 'turn_right' or command == 'g':
             drone.turn_right()
         else:
-            drone.hover
+            drone.hover()
 
         print "Command: ", command
-
-        #print 'in loop'
-        #drone.hover
 
 finally:
     print "Bye"

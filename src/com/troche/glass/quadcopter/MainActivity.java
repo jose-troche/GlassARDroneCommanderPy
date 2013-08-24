@@ -152,6 +152,7 @@ public class MainActivity extends Activity implements SensorEventListener {
     @Override
     public synchronized void onResume() {
         super.onResume();
+        startSensorTracking();
         if(D) Log.e(TAG, "+ ON RESUME +");
 
         // Performing this check in onResume() covers the case in which BT was
@@ -194,30 +195,6 @@ public class MainActivity extends Activity implements SensorEventListener {
         if(D) Log.e(TAG, "--- ON DESTROY ---");
     }
 
-    /**
-     * Sends a message through Bluetooth
-     * @param message  A string of text to send.
-     */
-    private void sendMessage(String message) {
-        mTextOutput.setText(message);
-
-        // Check that we're actually connected before trying anything
-        if (mBluetoothService.getState() != BluetoothConnectionService.STATE_CONNECTED) {
-            //Toast.makeText(this, R.string.not_connected, Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        // Check that there's actually something to send
-        if (message.length() > 0) {
-            // Get the message bytes and tell the BluetoothConnectionService to write
-            byte[] send = (message + "\n").getBytes();
-            mBluetoothService.write(send);
-
-            // Reset out string buffer to zero
-            mOutStringBuffer.setLength(0);
-        }
-    }
-
     private final void setStatus(int resId) {
         final ActionBar actionBar = getActionBar();
         actionBar.setSubtitle(resId);
@@ -243,6 +220,7 @@ public class MainActivity extends Activity implements SensorEventListener {
                     mTextInput.setText("");
                     mTakeoffToggle.setChecked(false);
                     mTrackingToggle.setChecked(false);
+                    invalidateOptionsMenu();
                     break;
                 case BluetoothConnectionService.STATE_CONNECTING:
                     setStatus(R.string.title_connecting);
@@ -314,6 +292,9 @@ public class MainActivity extends Activity implements SensorEventListener {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
+        if (mBluetoothService.getState() == BluetoothConnectionService.STATE_CONNECTED)
+            return false;
+
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.option_menu, menu);
         return true;
@@ -332,6 +313,30 @@ public class MainActivity extends Activity implements SensorEventListener {
         return false;
     }
 
+    /**
+     * Sends a message through Bluetooth
+     * @param message  A string of text to send.
+     */
+    private void sendMessage(String message) {
+        mTextOutput.setText(message);
+
+        // Check that we're actually connected before trying anything
+        if (mBluetoothService.getState() != BluetoothConnectionService.STATE_CONNECTED) {
+            //Toast.makeText(this, R.string.not_connected, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        // Check that there's actually something to send
+        if (message.length() > 0) {
+            // Get the message bytes and tell the BluetoothConnectionService to write
+            byte[] send = (message + "\n").getBytes();
+            mBluetoothService.write(send);
+
+            // Reset out string buffer to zero
+            mOutStringBuffer.setLength(0);
+        }
+    }
+
     public void onTakeoffToggleClicked(View view) {
         boolean on = ((ToggleButton) view).isChecked();
 
@@ -347,6 +352,7 @@ public class MainActivity extends Activity implements SensorEventListener {
 
         if (on) {
             startSensorTracking();
+            mTrackingToggle.setFocusable(false);
         } else {
             stopSensorTracking();
         }
@@ -373,6 +379,7 @@ public class MainActivity extends Activity implements SensorEventListener {
 
         String sensorData;
         float heading, pitch, roll;
+        boolean commandSent = true;
 
         SensorManager.getRotationMatrixFromVector(mRotationMatrix, event.values);
         SensorManager.remapCoordinateSystem(mRotationMatrix,
@@ -382,11 +389,11 @@ public class MainActivity extends Activity implements SensorEventListener {
         toDegrees(mOrientation);
 
         if (mInitialHeading == null) {mInitialHeading = new Float(mOrientation[0]);}
-        heading = mOrientation[0];// - mInitialHeading;
+        heading = mOrientation[0];
         pitch = -mOrientation[1];
         roll = mOrientation[2];
 
-        sensorData = String.format("H: %+03.0f  P: %+03.0f  R: %+03.0f", heading, pitch, roll);
+        sensorData = String.format("P: %+03.0f  R: %+03.0f  H: %+03.0f", pitch, roll, heading);
         mTextSensorData.setText(sensorData);
 
         if (triggerCommand(pitch, PITCH_CENTER_POS, THRESHOLD)){
@@ -405,22 +412,33 @@ public class MainActivity extends Activity implements SensorEventListener {
                 sendMessage("Forward");
             }
         }
-        else if (triggerCommand(roll, ROLL_CENTER_POS, THRESHOLD)){
+        else{
+            commandSent = false;
+        }
+
+        if (triggerCommand(roll, ROLL_CENTER_POS, THRESHOLD)){
             sendMessage("Right");
         }
         else if (triggerCommand(roll, ROLL_CENTER_NEG, THRESHOLD)){
             sendMessage("Left");
         }
-        else {
+        else if (!commandSent){
             sendMessage("None");
         }
 
     }
 
+    /**
+     * Determines if a command should be triggered depending on the sensor values
+     **/
     private boolean triggerCommand(float value, int center, int threshold){
         return Math.abs(center - value) < threshold;
     }
 
+    /**
+     * Converts an array of float radians into degrees
+     * @param v the array to be converted
+     */
     private void toDegrees(float [] v){
         for (int i=0; i<v.length; i++) v[i]=(float)Math.toDegrees(v[i]);
     }
