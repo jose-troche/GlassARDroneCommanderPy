@@ -63,7 +63,7 @@ public class MainActivity extends Activity implements
     private static final int HEADING_THRESHOLD_POS = 15;
     private static final int HEADING_THRESHOLD_NEG = -15;
     private static final int PITCH_THRESHOLD_POS = 15;
-    private static final int PITCH_THRESHOLD_NEG = -12;
+    private static final int PITCH_THRESHOLD_NEG = -15;
     private static final int ROLL_THRESHOLD_POS = 15;
     private static final int ROLL_THRESHOLD_NEG = -15;
 

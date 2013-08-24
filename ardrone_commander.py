@@ -8,7 +8,7 @@ from ardrone_py import libardrone
 import sys
 
 drone = libardrone.ARDrone()
-drone.reset()
+drone.set_speed(0.1)
 
 print "Receiving commands... (q to exit)"
 
@@ -19,6 +19,8 @@ try:
 
         if command == 'quit' or command == 'q':
             break
+        elif command == 'reset' or command == 'r':
+            drone.reset()
         elif command == 'takeoff' or command == 't':
             drone.takeoff()
         elif command == 'land' or command == 'c':
