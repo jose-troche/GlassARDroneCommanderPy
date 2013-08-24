@@ -24,9 +24,9 @@ If you need more specific details read [prerequisites](prerequisites.md).
 Google Glass
 * In your computer, listen on the Bluetooth serial port and pipe it to ardrone_commmander.py:
 ```
-cd GlassQuadcopterCommander
-adb install -r out/production/GlassQuadcopterCommander/GlassQuadcopterCommander.apk
-cat < /dev/tty.Bluetooth-SerialPort | ./ardrone_commander.py
+    cd GlassQuadcopterCommander
+    adb install -r out/production/GlassQuadcopterCommander/GlassQuadcopterCommander.apk
+    cat < /dev/tty.Bluetooth-SerialPort | ./ardrone_commander.py
 ```
 * In Google Glass:
     * Launch Quadcopter Commander (via Launchy)
