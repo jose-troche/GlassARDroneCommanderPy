@@ -28,6 +28,7 @@ import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.speech.tts.TextToSpeech;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -41,7 +42,9 @@ import android.widget.ToggleButton;
 /**
  * This is the main Activity that displays options to connect and send sensor data
  */
-public class MainActivity extends Activity implements SensorEventListener {
+public class MainActivity extends Activity implements
+        SensorEventListener, TextToSpeech.OnInitListener {
+
     // Debugging
     private static final String TAG = "QuadcopterCommander";
     private static final boolean D = true;
@@ -52,6 +55,9 @@ public class MainActivity extends Activity implements SensorEventListener {
     private Float mInitialHeading;
     private float[] mRotationMatrix;
     private float[] mOrientation;
+
+    // Text to Speech
+    private TextToSpeech mSpeech;
 
     // Sensor constants
     private static final int HEADING_CENTER_POS = 15;
@@ -127,6 +133,9 @@ public class MainActivity extends Activity implements SensorEventListener {
         mRotationMatrix = new float[16];
         mOrientation = new float[3];
 
+        // Text to Speech init
+        mSpeech = new TextToSpeech(this, this);
+
         // Initialize text views
         mTextSensorData = (TextView) findViewById(R.id.text_sensor_data);
         mTextOutput = (TextView) findViewById(R.id.text_output);
@@ -152,8 +161,11 @@ public class MainActivity extends Activity implements SensorEventListener {
     @Override
     public synchronized void onResume() {
         super.onResume();
-        startSensorTracking();
         if(D) Log.e(TAG, "+ ON RESUME +");
+
+        // Start tracking sensor data
+        startSensorTracking();
+        mTrackingToggle.setFocusable(false);
 
         // Performing this check in onResume() covers the case in which BT was
         // not enabled during onStart(), so we were paused to enable it...
@@ -167,16 +179,6 @@ public class MainActivity extends Activity implements SensorEventListener {
         }
     }
 
-    private void setupBluetooth() {
-        Log.d(TAG, "setupBluetooth()");
-
-        // Initialize the BluetoothConnectionService to perform bluetooth connections
-        mBluetoothService = new BluetoothConnectionService(this, mHandler);
-
-        // Initialize the buffer for outgoing messages
-        mOutStringBuffer = new StringBuffer("");
-    }
-
     @Override
     public synchronized void onPause() {
         super.onPause();
@@ -187,12 +189,20 @@ public class MainActivity extends Activity implements SensorEventListener {
     @Override
     public void onDestroy() {
         super.onDestroy();
-        stopSensorTracking();
+
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         sendMessage("Quit\n");
+        mSpeech.shutdown();
+
         // Stop the Bluetooth service
         if (mBluetoothService != null) mBluetoothService.stop();
         if(D) Log.e(TAG, "--- ON DESTROY ---");
+    }
+
+    @Override
+    public void onInit(int status) {
+        // Called when the text-to-speech engine is initialized; we don't need
+        // to do anything here.
     }
 
     private final void setStatus(int resId) {
@@ -205,6 +215,16 @@ public class MainActivity extends Activity implements SensorEventListener {
         actionBar.setSubtitle(subTitle);
     }
 
+    private void setupBluetooth() {
+        Log.d(TAG, "setupBluetooth()");
+
+        // Initialize the BluetoothConnectionService to perform bluetooth connections
+        mBluetoothService = new BluetoothConnectionService(this, mHandler);
+
+        // Initialize the buffer for outgoing messages
+        mOutStringBuffer = new StringBuffer("");
+    }
+
     // The Handler that gets information back from the BluetoothConnectionService
     private final Handler mHandler = new Handler() {
         @Override
@@ -215,11 +235,9 @@ public class MainActivity extends Activity implements SensorEventListener {
                 switch (msg.arg1) {
                 case BluetoothConnectionService.STATE_CONNECTED:
                     setStatus(getString(R.string.title_connected_to, mConnectedDeviceName));
-                    mTextSensorData.setText("");
-                    mTextOutput.setText("");
                     mTextInput.setText("");
                     mTakeoffToggle.setChecked(false);
-                    mTrackingToggle.setChecked(false);
+                    mTrackingToggle.setChecked(true);
                     invalidateOptionsMenu();
                     break;
                 case BluetoothConnectionService.STATE_CONNECTING:
@@ -292,6 +310,7 @@ public class MainActivity extends Activity implements SensorEventListener {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
+        // If already Bluetooth connected, do not show menu to connect
         if (mBluetoothService.getState() == BluetoothConnectionService.STATE_CONNECTED)
             return false;
 
@@ -339,12 +358,17 @@ public class MainActivity extends Activity implements SensorEventListener {
 
     public void onTakeoffToggleClicked(View view) {
         boolean on = ((ToggleButton) view).isChecked();
+        String voiceCommand;
 
         if (on) {
             sendMessage("Takeoff");
+            voiceCommand = getString(R.string.voice_takeoff);
+
         } else {
             sendMessage("Land");
+            voiceCommand = getString(R.string.voice_land);
         }
+        mSpeech.speak(voiceCommand , TextToSpeech.QUEUE_FLUSH, null);
     }
 
     public void onSensorTrackingToggleClicked(View view) {
@@ -352,7 +376,6 @@ public class MainActivity extends Activity implements SensorEventListener {
 
         if (on) {
             startSensorTracking();
-            mTrackingToggle.setFocusable(false);
         } else {
             stopSensorTracking();
         }
