@@ -10,7 +10,7 @@ Google Glass application to fly an AR.Drone quadcopter.
       [Android Developer Tools (ADT)](http://developer.android.com/sdk/installing/bundle.html).
     * Download the [python ARDrone library](https://github.com/venthur/python-ardrone) into a 
       directory called `ardrone_py` and
-      make it available to Python by setting PYTHONPATH
+      make it available to Python by setting PYTHONPATH. Inside that directory type: `touch __init__.py`
     * Set up a Bluetooth serial port:
       * In Mac, got to Settings > BlueTooth > Advanced Settings and create a new connection port
       * In Glass, go to Settings > Bluetooth card (Should read "Now discoverable"). 
