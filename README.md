@@ -26,7 +26,7 @@ Google Glass application to fly an ARDrone quadcopter.
       * Check only the first checkbox (On)
       * Name: Bluetooth-SerialPort
       * Type: Modem
-   * In Glass, go to Settings > Bluetooth card (should state "Now discoverable")
+   * In Glass, go to System Preferences > Bluetooth card (should state "Now discoverable")
    * In Mac, click the Bluetooth icon in the top menu bar and select `Set Up Bluetooth Device...`
    * Pair Mac Bluetooth with Google Glass
 
