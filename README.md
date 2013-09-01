@@ -15,19 +15,20 @@ Google Glass application to fly an ARDrone quadcopter.
       * `touch __init__.py`
       * Add the parent directory of `ardrone_py` to the PYTHONPATH environment variable 
         (e.g. add `export PYTHONPATH=$HOME/<ardrone_py_parent_directory>` in `$HOME/.bash_profile`)
-    * Set up a Bluetooth serial port connection between computer and Google Glass:
-      * In Mac, go to Settings > Bluetooth > Advanced... > +, to add a new serial connection port with
-        the following properties:
-         * Check only the first checkbox (On)
-         * Name: Bluetooth-SerialPort
-         * Type: Modem
-      * In Glass, go to Settings > Bluetooth card (should state "Now discoverable"). 
-      * In Mac, click the Bluetooth icon in the top menu bar and select `Set Up Bluetooth Device...`.
-      * Pair Mac Bluetooth with Google Glass.
 
 * In Google Glass:
     * Install (deploy) [Launchy](https://github.com/kaze0/launchy), so you can easily launch other
       installed Android applications from the Glass Settings.
+
+* Set up a Bluetooth serial port connection between your computer and Google Glass:
+   * In Mac, go to Settings > Bluetooth > Advanced... > `+`, to add a new serial port connection with
+     the following properties:
+      * Check only the first checkbox (On)
+      * Name: Bluetooth-SerialPort
+      * Type: Modem
+   * In Glass, go to Settings > Bluetooth card (should state "Now discoverable"). 
+   * In Mac, click the Bluetooth icon in the top menu bar and select `Set Up Bluetooth Device...`.
+   * Pair Mac Bluetooth with Google Glass.
 
 If you need more specific details read [prerequisites](prerequisites.md).
 
@@ -35,14 +36,15 @@ If you need more specific details read [prerequisites](prerequisites.md).
 * Clone this repo
 * With Android Studio or Android Developer Tools, compile and deploy this application to
 Google Glass
-* In your computer, listen on the Bluetooth serial port and pipe it to ardrone_commmander.py:
+* In your computer, listen on the Bluetooth serial port and pipe it to `ardrone_commmander.py`:
 
 ```
-    cd GlassQuadcopterCommander
-    adb install -r out/production/GlassQuadcopterCommander/GlassQuadcopterCommander.apk
+    cd GlassARDroneCommanderPy
+    adb install -r out/production/GlassARDroneCommanderPy/GlassARDroneCommanderPy.apk
     cat < /dev/tty.Bluetooth-SerialPort | ./ardrone_commander.py
 ```
 * In Google Glass:
-    * Launch Quadcopter Commander (via Launchy)
+    * Launch `Quadcopter Commander` (via Launchy)
     * Connect to your computer's Bluetooth serial port
-    * Pilot your ARDrone!
+    * Take off and pilot your ARDrone!
+
