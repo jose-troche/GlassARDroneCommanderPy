@@ -1,4 +1,7 @@
 # Prerequisites
+
+## Launchy Installation
+
 * In your computer, install [Android Studio](http://developer.android.com/sdk/installing/studio.html) 
 or [Android Developer Tools (ADT)] (http://developer.android.com/sdk/installing/bundle.html).
 From now on, the instructions are for Android Studio, but the steps are similar for ADT.
@@ -24,3 +27,14 @@ is selected as **Target Device**
 Select Launchy and check the box to always use Launchy.
 * Now every time you go to `Settings` Launchy will allow you to launch other installed Android applications 
 (or the regular Settings).
+
+##Bluetooth Connection Set Up
+Set up a Bluetooth serial port connection between your computer and Google Glass:
+* In Mac, go to System Preferences > Bluetooth > Advanced... > `+`, to add a new serial port connection with
+  the following properties:
+   * Check only the first checkbox (On)
+   * Name: Bluetooth-SerialPort
+   * Type: Modem
+* In Glass, go to Settings > Bluetooth card (should state "Now discoverable")
+* In Mac, click the Bluetooth icon in the top menu bar and select `Set Up Bluetooth Device...`
+* Pair Mac Bluetooth with Google Glass
