@@ -36,13 +36,14 @@ Set up a Bluetooth serial port connection between your computer and Google Glass
    * Name: Bluetooth-SerialPort
    * Type: Modem
 
-![System Preferences screenshot]
-(http://jose-troche.github.io/GlassARDroneCommanderPy/img/SystemPreferences.png)
-![Bluetooth screenshot](http://jose-troche.github.io/GlassARDroneCommanderPy/img/Bluetooth.png)
+   ![System Preferences screenshot]
+   (http://jose-troche.github.io/GlassARDroneCommanderPy/img/SystemPreferences.png)
+   ![Bluetooth screenshot](http://jose-troche.github.io/GlassARDroneCommanderPy/img/Bluetooth.png)
 * In Glass, go to Settings > Bluetooth card (should state "Now discoverable")
-![Bluetooth Glass screenshot]
-(http://jose-troche.github.io/GlassARDroneCommanderPy/img/BluetoothGlass.png)
+
+  ![Bluetooth Glass screenshot](http://jose-troche.github.io/GlassARDroneCommanderPy/img/BluetoothGlass.png)
 * In Mac, click the Bluetooth icon in the top menu bar and select `Set Up Bluetooth Device...`
-![Bluetooth Top Menu Bar screenshot]
-(http://jose-troche.github.io/GlassARDroneCommanderPy/img/BluetoothTopMenuBar.png)
+
+  ![Bluetooth Top Menu Bar screenshot]
+  (http://jose-troche.github.io/GlassARDroneCommanderPy/img/BluetoothTopMenuBar.png)
 * Pair Mac Bluetooth with Google Glass
