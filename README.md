@@ -17,8 +17,8 @@ Google Glass application to fly an ARDrone quadcopter.
         (e.g. add `export PYTHONPATH=$HOME/<ardrone_py_parent_directory>` in `$HOME/.bash_profile`)
 
 * In Google Glass:
-    * Install (deploy) [Launchy](https://github.com/kaze0/launchy), so you can easily launch other
-      installed Android applications from the Glass Settings.
+    * Install (deploy) [Launchy](https://github.com/kaze0/launchy), so you can easily launch
+      custom Android applications
 
 * Set up a Bluetooth serial port connection between your computer and Google Glass:
    * In Mac, go to Settings > Bluetooth > Advanced... > `+`, to add a new serial port connection with
@@ -26,17 +26,17 @@ Google Glass application to fly an ARDrone quadcopter.
       * Check only the first checkbox (On)
       * Name: Bluetooth-SerialPort
       * Type: Modem
-   * In Glass, go to Settings > Bluetooth card (should state "Now discoverable"). 
-   * In Mac, click the Bluetooth icon in the top menu bar and select `Set Up Bluetooth Device...`.
-   * Pair Mac Bluetooth with Google Glass.
+   * In Glass, go to Settings > Bluetooth card (should state "Now discoverable")
+   * In Mac, click the Bluetooth icon in the top menu bar and select `Set Up Bluetooth Device...`
+   * Pair Mac Bluetooth with Google Glass
 
-If you need more specific details read [prerequisites](prerequisites.md).
+For more specific details and screenshots read [detailed prerequisites](prerequisites.md).
 
 ## Configuration
 * Clone this repo
 * With Android Studio or Android Developer Tools, compile and deploy this application to
 Google Glass
-* In your computer, listen on the Bluetooth serial port and pipe it to `ardrone_commmander.py`:
+* In your computer, listen on the Bluetooth serial port and pipe it to `ardrone_commander.py`:
 
 ```
     cd GlassARDroneCommanderPy
@@ -44,7 +44,7 @@ Google Glass
     cat < /dev/tty.Bluetooth-SerialPort | ./ardrone_commander.py
 ```
 * In Google Glass:
-    * Launch `Quadcopter Commander` (via Launchy)
-    * Connect to your computer's Bluetooth serial port
+    * Tap on the Settings card and the select/launch `Quadcopter Commander`
+    * In `Quadcopter Commander` tap on the menu option to connect to your computer's Bluetooth serial port
     * Take off and pilot your ARDrone!
 
