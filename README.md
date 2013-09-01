@@ -13,7 +13,8 @@ Google Glass application to fly an ARDrone quadcopter.
       * `mv python-ardrone ardrone_py`
       * `cd ardrone_py`
       * `touch __init__.py`
-      * Add the parent directory of `ardrone_py` to the PYTHONPATH environment variable.
+      * Add the parent directory of `ardrone_py` to the PYTHONPATH environment variable 
+        (e.g. add `export PYTHONPATH=$HOME/<ardrone_py_parent_directory>` in `$HOME/.bash_profile`)
     * Set up a Bluetooth serial port connection between computer and Google Glass:
       * In Mac, go to Settings > Bluetooth > Advanced... > +, to add a new serial connection port with
         the following properties:
