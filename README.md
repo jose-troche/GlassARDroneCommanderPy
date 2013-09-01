@@ -1,20 +1,28 @@
 Glass Quadcopter Commander
 ==========================
 
-Google Glass application to fly an AR.Drone quadcopter.
+Google Glass application to fly an ARDrone quadcopter.
 
 ![Glass and AR.Drone](http://jose-troche.github.io/GlassARDroneCommanderPy/img/glass-ardrone.png)
 ## Prerequisites
 * In your computer:
     * Install [Android Studio](http://developer.android.com/sdk/installing/studio.html) or
       [Android Developer Tools (ADT)](http://developer.android.com/sdk/installing/bundle.html).
-    * Download the [python ARDrone library](https://github.com/venthur/python-ardrone) into a 
-      directory called `ardrone_py` and
-      make it available to Python by setting PYTHONPATH. Inside that directory type: `touch __init__.py`
-    * Set up a Bluetooth serial port:
-      * In Mac, got to Settings > BlueTooth > Advanced Settings and create a new connection port
-      * In Glass, go to Settings > Bluetooth card (Should read "Now discoverable"). 
-        In Mac, go to Bluetooth devices and pair it with google glass
+    * Install the [python ARDrone library](https://github.com/venthur/python-ardrone):
+      * `git clone https://github.com/venthur/python-ardrone`
+      * `mv python-ardrone ardrone_py`
+      * `cd ardrone_py`
+      * `touch __init__.py`
+      * Add the parent directory of `ardrone_py` to the PYTHONPATH environment variable.
+    * Set up a Bluetooth serial port connection between computer and Google Glass:
+      * In Mac, go to Settings > Bluetooth > Advanced... > +, to add a new serial connection port with
+        the following properties:
+         * Check only the first checkbox (On)
+         * Name: Bluetooth-SerialPort
+         * Type: Modem
+      * In Glass, go to Settings > Bluetooth card (should state "Now discoverable"). 
+      * In Mac, click the Bluetooth icon in the top menu bar and select `Set Up Bluetooth Device...`.
+      * Pair Mac Bluetooth with Google Glass.
 
 * In Google Glass:
     * Install (deploy) [Launchy](https://github.com/kaze0/launchy), so you can easily launch other
