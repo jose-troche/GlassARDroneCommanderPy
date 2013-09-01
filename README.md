@@ -48,3 +48,5 @@ Google Glass
     * In `Quadcopter Commander` tap on the menu option to connect to your computer's Bluetooth serial port
     * Take off and pilot your ARDrone!
 
+    ![Glass Application](http://jose-troche.github.io/GlassARDroneCommanderPy/img/GlassApp.png)
+
