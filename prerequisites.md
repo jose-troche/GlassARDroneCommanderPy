@@ -30,15 +30,19 @@ Select Launchy and check the box to always use Launchy.
 
 ##Bluetooth Connection Set Up
 Set up a Bluetooth serial port connection between your computer and Google Glass:
-* In Mac, go to System Preferences > Bluetooth > Advanced... > `+`, to add a new serial port connection with
-  the following properties:
+* In Mac, go to System Preferences > Bluetooth > Advanced... 
+
+  ![System Preferences screenshot]
+   (http://jose-troche.github.io/GlassARDroneCommanderPy/img/SystemPreferences.png)
+
+* Click on the `+` icon to add a new serial port connection with the following properties:
    * Check only the first checkbox (On)
-   * Name: Bluetooth-SerialPort
+   * Serial Port Name: Bluetooth-SerialPort
    * Type: Modem
 
-   ![System Preferences screenshot]
-   (http://jose-troche.github.io/GlassARDroneCommanderPy/img/SystemPreferences.png)
-   ![Bluetooth screenshot](http://jose-troche.github.io/GlassARDroneCommanderPy/img/Bluetooth.png)
+   ![Bluetooth screenshot]
+   (http://jose-troche.github.io/GlassARDroneCommanderPy/img/Bluetooth.png)
+   
 * In Glass, go to Settings > Bluetooth card (should state "Now discoverable")
 
   ![Bluetooth Glass screenshot](http://jose-troche.github.io/GlassARDroneCommanderPy/img/BluetoothGlass.png)
