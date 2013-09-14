@@ -86,7 +86,6 @@ public class MainActivity extends Activity implements
     private TextView mTextSensorData;
     private TextView mTextOutput;
     private TextView mTextInput;
-    private ToggleButton mTrackingToggle;
     private ToggleButton mTakeoffToggle;
     private ToggleButton mElevationToggle;
 
@@ -122,7 +121,6 @@ public class MainActivity extends Activity implements
 
         // Toggle Buttons
         mTakeoffToggle = (ToggleButton) findViewById(R.id.takeoff_toggle);
-        mTrackingToggle = (ToggleButton) findViewById(R.id.tracking_toggle);
         mElevationToggle = (ToggleButton) findViewById(R.id.elevation_toggle);
 
         // Sensor init
@@ -163,7 +161,6 @@ public class MainActivity extends Activity implements
 
         // Start tracking sensor data
         startSensorTracking();
-        mTrackingToggle.setFocusable(false);
 
         // Performing this check in onResume() covers the case in which BT was
         // not enabled during onStart(), so we were paused to enable it...
@@ -198,14 +195,18 @@ public class MainActivity extends Activity implements
         if(D) Log.e(TAG, "--- ON DESTROY ---");
     }
 
-    private final void setStatus(int resId) {
+    private void setStatus(int resId) {
         final ActionBar actionBar = getActionBar();
-        actionBar.setSubtitle(resId);
+        if (actionBar != null) {
+            actionBar.setSubtitle(resId);
+        }
     }
 
-    private final void setStatus(CharSequence subTitle) {
+    private void setStatus(CharSequence subTitle) {
         final ActionBar actionBar = getActionBar();
-        actionBar.setSubtitle(subTitle);
+        if (actionBar != null) {
+            actionBar.setSubtitle(subTitle);
+        }
     }
 
     private void setupBluetooth() {
@@ -230,7 +231,6 @@ public class MainActivity extends Activity implements
                     setStatus(getString(R.string.title_connected_to, mConnectedDeviceName));
                     mTextInput.setText("");
                     mTakeoffToggle.setChecked(false);
-                    mTrackingToggle.setChecked(true);
                     invalidateOptionsMenu();
                     break;
                 case BluetoothConnectionService.STATE_CONNECTING:
@@ -243,10 +243,9 @@ public class MainActivity extends Activity implements
                 }
                 break;
             case MESSAGE_WRITE:
-                byte[] writeBuf = (byte[]) msg.obj;
-                // construct a string from the buffer
-                String writeMessage = new String(writeBuf);
-                // mTextOutput.setText(writeMessage);
+                // construct a string from the buffer if needed
+                //byte[] writeBuf = (byte[]) msg.obj;
+                //String writeMessage = new String(writeBuf);
                 break;
             case MESSAGE_READ:
                 byte[] readBuf = (byte[]) msg.obj;
@@ -372,16 +371,6 @@ public class MainActivity extends Activity implements
     }
 
 
-    public void onSensorTrackingToggleClicked(View view) {
-        boolean on = ((ToggleButton) view).isChecked();
-
-        if (on) {
-            startSensorTracking();
-        } else {
-            stopSensorTracking();
-        }
-    }
-
     private void startSensorTracking(){
         // Start listening to sensor data
         mSensorManager.registerListener(this, mSensor, SensorManager.SENSOR_DELAY_UI);
@@ -418,7 +407,7 @@ public class MainActivity extends Activity implements
 
         toDegrees(mOrientation);
 
-        if (mInitialHeading == null) {mInitialHeading = new Float(mOrientation[0]);}
+        if (mInitialHeading == null) {mInitialHeading = mOrientation[0];}
         heading = mOrientation[0];
         pitch = -mOrientation[1];
         roll = mOrientation[2];

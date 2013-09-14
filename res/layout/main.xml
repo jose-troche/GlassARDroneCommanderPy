@@ -60,23 +60,13 @@
                 android:id="@+id/elevation_toggle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textOn="Elevation"
-                android:textOff="Elevation"
+                android:textOn="  Elevation  "
+                android:textOff="  Elevation  "
                 android:onClick="onElevationToggleClicked"
                 android:checked="true"
                 android:layout_alignParentBottom="true"
-                android:layout_centerHorizontal="true"
-                />
+                android:layout_alignParentRight="true" />
 
-        <ToggleButton
-                android:id="@+id/tracking_toggle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textOn="Stop Tracking"
-                android:textOff="Start Tracking"
-                android:onClick="onSensorTrackingToggleClicked"
-                android:layout_alignParentBottom="true"
-                android:layout_alignParentRight="true"/>
     </RelativeLayout>
 
 </LinearLayout>
