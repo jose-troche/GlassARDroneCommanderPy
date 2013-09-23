@@ -3,7 +3,7 @@ Glass Quadcopter Commander
 
 Google Glass application to fly an ARDrone quadcopter.
 
-[![Glass and AR.Drone](http://jose-troche.github.io/GlassARDroneCommanderPy/img/glass-ardrone.png)]
+[![Glass AR.Drone Trailer](http://jose-troche.github.io/GlassARDroneCommanderPy/img/TrailerThumbnailPlay.png)]
 (//www.youtube.com/embed/ZfS2z_Jh82g?rel=0)
 
 Presentation [slides](//www.slideshare.net/slideshow/embed_code/26252508) and [video](//www.youtube.com/embed/kPqzPWC3b5A?rel=0)
