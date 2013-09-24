@@ -1,7 +1,8 @@
 Glass Quadcopter Commander
 ==========================
 
-Google Glass application to fly an ARDrone quadcopter.
+Google Glass application to fly an ARDrone quadcopter. 
+The application gets head position from Google Glass sensor data and maps it to drone commands.
 
 [![Glass AR.Drone Trailer](http://jose-troche.github.io/GlassARDroneCommanderPy/img/TrailerThumbnailPlay.png)]
 (//www.youtube.com/embed/ZfS2z_Jh82g?rel=0)
