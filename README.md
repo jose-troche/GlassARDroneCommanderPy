@@ -1,3 +1,7 @@
+Note
+====
+I now have an improved stand-alone Android application with no Python dependencies. Google Glass now communicates with the ARDrone directly. Check it out [here](//github.com/jose-troche/GlassARDroneCommander)
+
 Glass Quadcopter Commander
 ==========================
 
